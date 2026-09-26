@@ -1,0 +1,25 @@
+{
+  "entities": {
+    "students": {
+      "fields": {
+        "name": { "type": "string", "description": "Student full name" },
+        "username": { "type": "string", "description": "Student username" },
+        "dateJoined": { "type": "string", "description": "Registration date formatted in Arabic" },
+        "createdAt": { "type": "number", "description": "Timestamp created" },
+        "progress": { "type": "number", "description": "Percentage progress 0-100" },
+        "completedLessons": { "type": "array", "description": "Array of completed lesson IDs" }
+      }
+    },
+    "lessons": {
+      "fields": {
+        "title": { "type": "string", "description": "Lesson title" },
+        "description": { "type": "string", "description": "Lesson description" },
+        "videoUrl": { "type": "string", "description": "Embeddable preview or video URL" },
+        "order": { "type": "number", "description": "Numeric sort order" },
+        "duration": { "type": "string", "description": "Lesson duration" },
+        "dateAdded": { "type": "string", "description": "Date added in Arabic format" },
+        "createdAt": { "type": "number", "description": "Timestamp created" }
+      }
+    }
+  }
+}

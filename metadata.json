@@ -1,0 +1,8 @@
+{
+  "name": "Merya Academy",
+  "description": "منصة أكاديمية Merya التعليمية الشاملة باللغة العربية مع لوحة تحكم للإدارة وبوابة متقدمة للطلاب",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
