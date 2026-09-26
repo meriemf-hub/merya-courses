@@ -13,7 +13,9 @@ import {
   PlayCircle,
   HelpCircle,
   Link2,
-  Check
+  Check,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 import { Lesson } from '../types';
 import { db } from '../firebase';
@@ -42,6 +44,7 @@ export const LessonsManagementSection: React.FC<LessonsManagementSectionProps> =
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [resourceUrl, setResourceUrl] = useState('');
   const [order, setOrder] = useState<number>(lessons.length + 1);
   const [duration, setDuration] = useState('30 دقيقة');
 
@@ -60,6 +63,7 @@ export const LessonsManagementSection: React.FC<LessonsManagementSectionProps> =
     setTitle('');
     setDescription('');
     setVideoUrl('');
+    setResourceUrl('');
     setOrder(lessons.length + 1);
     setDuration('30 دقيقة');
     setErrorMsg(null);
@@ -71,6 +75,7 @@ export const LessonsManagementSection: React.FC<LessonsManagementSectionProps> =
     setTitle(lesson.title);
     setDescription(lesson.description);
     setVideoUrl(lesson.videoUrl || '');
+    setResourceUrl(lesson.resourceUrl || '');
     setOrder(lesson.order);
     setDuration(lesson.duration || '30 دقيقة');
     setErrorMsg(null);
@@ -97,15 +102,23 @@ export const LessonsManagementSection: React.FC<LessonsManagementSectionProps> =
 
       if (editingLesson) {
         const lessonDoc = doc(db, 'lessons', editingLesson.id);
-        await updateDoc(lessonDoc, {
+        const payload: any = {
           title: title.trim(),
           description: description.trim(),
           videoUrl: videoUrl.trim(), // Can be empty or google drive /preview
           order: Number(order) || 1,
           duration: duration.trim()
-        });
+        };
+        // Update resourceUrl (optional)
+        if (resourceUrl.trim()) {
+          payload.resourceUrl = resourceUrl.trim();
+        } else {
+          payload.resourceUrl = '';
+        }
+
+        await updateDoc(lessonDoc, payload);
       } else {
-        await addDoc(lessonsRef, {
+        const payload: any = {
           title: title.trim(),
           description: description.trim(),
           videoUrl: videoUrl.trim(),
@@ -113,7 +126,11 @@ export const LessonsManagementSection: React.FC<LessonsManagementSectionProps> =
           duration: duration.trim(),
           dateAdded: dateStr,
           createdAt: Date.now()
-        });
+        };
+        if (resourceUrl.trim()) {
+          payload.resourceUrl = resourceUrl.trim();
+        }
+        await addDoc(lessonsRef, payload);
       }
 
       setModalOpen(false);
@@ -323,6 +340,26 @@ export const LessonsManagementSection: React.FC<LessonsManagementSectionProps> =
                   )}
                 </div>
 
+                {/* Attached Resource URL badge if configured */}
+                {les.resourceUrl && les.resourceUrl.trim() !== '' && (
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-purple-50/70 border border-purple-100 text-xs text-[#630ed4]">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <Globe className="w-3.5 h-3.5 shrink-0" />
+                      <span className="font-bold truncate">الموقع المرفق:</span>
+                      <span className="font-mono text-[11px] truncate text-gray-600">{les.resourceUrl}</span>
+                    </div>
+                    <a
+                      href={les.resourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 hover:bg-purple-100 rounded text-[#630ed4] shrink-0"
+                      title="فتح الرابط"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                )}
+
                 {/* Bottom preview button */}
                 <div className="pt-2 border-t border-gray-50 flex items-center justify-between">
                   <span className="text-[11px] text-gray-400 flex items-center gap-1">
@@ -449,6 +486,32 @@ export const LessonsManagementSection: React.FC<LessonsManagementSectionProps> =
                 <div className="text-[11px] text-gray-500 flex items-center gap-1 pt-1">
                   <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
                   <span>الصقي الرابط مباشرة هنا لحفظه وتحديث بوابة الطلاب لحظياً.</span>
+                </div>
+              </div>
+
+              {/* Resource URL (Optional - Attached website link) */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-gray-700 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-[#630ed4]" />
+                    <span>رابط الموقع المرفق (Resource URL)</span>
+                  </span>
+                  <span className="text-[11px] text-gray-500 font-normal">اختياري - مثل مواقع التدريب والتطبيقات</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    dir="ltr"
+                    value={resourceUrl}
+                    onChange={(e) => setResourceUrl(e.target.value)}
+                    placeholder="https://example.com"
+                    className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 text-sm text-left font-mono text-[#121c28] focus:border-[#630ed4] outline-none"
+                  />
+                  <Link2 className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+                </div>
+                <div className="text-[11px] text-gray-500 flex items-center gap-1 pt-1">
+                  <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+                  <span>يظهر كزر مميز تحت مشغل الفيديو في بوابة الطالبة (مثل رابط منصة التدريب للدرس 7).</span>
                 </div>
               </div>
 

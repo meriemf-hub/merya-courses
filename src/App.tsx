@@ -98,6 +98,7 @@ export default function App() {
             title: data.title || '',
             description: data.description || '',
             videoUrl: data.videoUrl || '',
+            resourceUrl: data.resourceUrl || '',
             order: Number(data.order) || 1,
             duration: data.duration || '30 دقيقة',
             dateAdded: data.dateAdded || '',

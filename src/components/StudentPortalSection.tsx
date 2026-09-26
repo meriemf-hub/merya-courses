@@ -8,7 +8,9 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  ExternalLink,
+  Globe
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Lesson, AuthUser } from '../types';
@@ -257,6 +259,31 @@ export const StudentPortalSection: React.FC<StudentPortalSectionProps> = ({
                     </button>
                   )}
                 </div>
+
+                {/* Attached Website Link (Resource URL) - Displayed below video player if present */}
+                {activeLesson.resourceUrl && activeLesson.resourceUrl.trim() !== '' && (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-50 via-indigo-50/50 to-purple-50/30 border border-purple-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#630ed4] text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <Globe className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-[#630ed4] mb-0.5">الموقع المرفق مع هذا الدرس</div>
+                        <div className="text-sm font-extrabold text-[#121c28]">منصة التدريب والتطبيق العملي</div>
+                      </div>
+                    </div>
+
+                    <a
+                      href={activeLesson.resourceUrl.trim()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#630ed4] hover:bg-[#6e3aca] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all duration-150 active:scale-[0.98] cursor-pointer"
+                    >
+                      <span>🔗 رابط الموقع المرفق</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                )}
 
                 {/* Lesson Description */}
                 <div className="space-y-3">

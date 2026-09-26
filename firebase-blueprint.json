@@ -15,6 +15,7 @@
         "title": { "type": "string", "description": "Lesson title" },
         "description": { "type": "string", "description": "Lesson description" },
         "videoUrl": { "type": "string", "description": "Embeddable preview or video URL" },
+        "resourceUrl": { "type": "string", "description": "Optional attached website or resource URL" },
         "order": { "type": "number", "description": "Numeric sort order" },
         "duration": { "type": "string", "description": "Lesson duration" },
         "dateAdded": { "type": "string", "description": "Date added in Arabic format" },

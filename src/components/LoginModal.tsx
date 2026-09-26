@@ -117,6 +117,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
         } else if (data.password) {
           // Backward compatibility: If an old record still has legacy plain-text password
           isPasswordCorrect = data.password === cleanPassword;
+        } else if (cleanUsername === 'meryaacademy') {
+          // Demo student default password check
+          isPasswordCorrect = cleanPassword === '4111971';
         } else {
           // If no password data exists, permit login
           isPasswordCorrect = true;
@@ -126,6 +129,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
           setError('كلمة المرور غير صحيحة لهذا الحساب');
           setLoading(false);
           return;
+        }
+
+        // If the student document didn't have passwordHash, upgrade it securely now
+        if (!data.passwordHash) {
+          try {
+            const { hash, salt } = await hashPassword(cleanPassword);
+            const { updateDoc, doc: fDoc } = await import('firebase/firestore');
+            await updateDoc(fDoc(db, 'students', studentDoc.id), {
+              passwordHash: hash,
+              passwordSalt: salt
+            });
+          } catch {
+            // Non-critical, continue
+          }
         }
 
         const authUser: AuthUser = {

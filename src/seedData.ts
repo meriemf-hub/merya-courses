@@ -108,6 +108,7 @@ export const EXACT_7_LESSONS = [
     badge: 'متاح',
     progressText: 'الوحدة 7',
     videoUrl: '',
+    resourceUrl: 'https://prompt-sigma-flame.vercel.app/',
     description: 'القواعد الذهبية لهندسة الأوامر (Prompt Engineering) لتحقيق أعلى دقة وجودة من نماذج الذكاء الاصطناعي.'
   }
 ];
@@ -154,7 +155,7 @@ export async function seedInitialDataIfNeeded() {
 
       if (!existing) {
         // Create new
-        batch.set(lRef, {
+        const newDocData: any = {
           title: lesson.title,
           description: lesson.description,
           videoUrl: '', // strictly empty as requested
@@ -166,17 +167,26 @@ export async function seedInitialDataIfNeeded() {
             day: 'numeric'
           }),
           createdAt: Date.now() + lesson.order
-        });
+        };
+        if (lesson.id === 'lesson-7' && lesson.resourceUrl) {
+          newDocData.resourceUrl = lesson.resourceUrl;
+        }
+        batch.set(lRef, newDocData);
         hasChanges = true;
       } else {
         // If title or order differs from the exact 7 specification, update it while preserving any videoUrl the admin may have typed
-        const needsUpdate = existing.title !== lesson.title || existing.order !== lesson.order;
-        if (needsUpdate) {
-          batch.update(lRef, {
-            title: lesson.title,
-            order: lesson.order,
-            description: lesson.description
-          });
+        const updatePayload: any = {};
+        if (existing.title !== lesson.title) updatePayload.title = lesson.title;
+        if (existing.order !== lesson.order) updatePayload.order = lesson.order;
+        if (existing.description !== lesson.description) updatePayload.description = lesson.description;
+
+        // For lesson-7, ensure resourceUrl is set to the provided website link
+        if (lesson.id === 'lesson-7' && lesson.resourceUrl && existing.resourceUrl !== lesson.resourceUrl) {
+          updatePayload.resourceUrl = lesson.resourceUrl;
+        }
+
+        if (Object.keys(updatePayload).length > 0) {
+          batch.update(lRef, updatePayload);
           hasChanges = true;
         }
       }
