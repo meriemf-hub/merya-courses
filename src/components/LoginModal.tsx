@@ -3,11 +3,8 @@ import { LogIn, Eye, EyeOff, GraduationCap, AlertCircle } from 'lucide-react';
 import { AuthUser } from '../types';
 import { ADMIN_CREDENTIALS } from '../seedData';
 import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword 
-} from 'firebase/auth';
-import { db, auth } from '../firebase';
+import { db } from '../firebase';
+import { hashPassword, verifyPassword } from '../utils/security';
 
 interface LoginModalProps {
   onLoginSuccess: (user: AuthUser) => void;
@@ -62,17 +59,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
         return;
       }
 
-      if (cleanPassword.length < 6) {
-        setError('كلمة المرور يجب أن تتكون من 6 أحرف أو أرقام على الأقل لحماية حسابك');
+      if (cleanPassword.length < 4) {
+        setError('كلمة المرور يجب أن تتكون من 4 خانات على الأقل');
         setLoading(false);
         return;
       }
 
-      // Generate a valid internal email for Firebase Auth based on the username
-      const sanitizedUsername = cleanUsername.replace(/[^a-z0-9._-]/g, '');
-      const authEmail = `${sanitizedUsername || 'student'}@meryaacademy.internal`;
-
-      // Check if student profile document already exists in Firestore
+      // 3. Query Firestore for existing student record
       const studentsRef = collection(db, 'students');
       const q = query(studentsRef, where('username', '==', cleanUsername));
       const snap = await getDocs(q);
@@ -84,23 +77,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
       });
 
       if (snap.empty) {
-        // --- NEW STUDENT SIGN-UP FLOW ---
-        // 1. Authenticate & create user securely using Firebase Authentication built-in password handler
-        try {
-          await createUserWithEmailAndPassword(auth, authEmail, cleanPassword);
-        } catch (authErr: any) {
-          if (authErr.code === 'auth/email-already-in-use') {
-            await signInWithEmailAndPassword(auth, authEmail, cleanPassword);
-          } else {
-            throw authErr;
-          }
-        }
+        // --- NEW STUDENT SIGN UP ---
+        // Securely hash password using Web Crypto SHA-256 with salt.
+        // Raw plain-text password is NEVER saved in Firestore!
+        const { hash, salt } = await hashPassword(cleanPassword);
 
-        // 2. Immediately write student record to Firestore WITHOUT the raw password!
-        // Only: name, username, dateJoined, createdAt, progress, completedLessons
         const newDocRef = await addDoc(studentsRef, {
           name: cleanFullName,
           username: cleanUsername,
+          passwordHash: hash,
+          passwordSalt: salt,
           dateJoined: dateStr,
           createdAt: Date.now(),
           progress: 0,
@@ -119,31 +105,28 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
         onLoginSuccess(authUser);
         return;
       } else {
-        // --- EXISTING STUDENT LOGIN FLOW ---
-        // 1. Verify password securely against Firebase Authentication
-        try {
-          await signInWithEmailAndPassword(auth, authEmail, cleanPassword);
-        } catch (authErr: any) {
-          if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential') {
-            // Check if user account was created prior to Firebase Auth integration
-            try {
-              await createUserWithEmailAndPassword(auth, authEmail, cleanPassword);
-            } catch {
-              setError('كلمة المرور غير صحيحة لهذا الحساب');
-              setLoading(false);
-              return;
-            }
-          } else if (authErr.code === 'auth/wrong-password') {
-            setError('كلمة المرور غير صحيحة لهذا الحساب');
-            setLoading(false);
-            return;
-          } else {
-            throw authErr;
-          }
-        }
-
+        // --- EXISTING STUDENT LOGIN ---
         const studentDoc = snap.docs[0];
         const data = studentDoc.data();
+
+        let isPasswordCorrect = false;
+
+        if (data.passwordHash && data.passwordSalt) {
+          // Verify against cryptographically hashed password
+          isPasswordCorrect = await verifyPassword(cleanPassword, data.passwordHash, data.passwordSalt);
+        } else if (data.password) {
+          // Backward compatibility: If an old record still has legacy plain-text password
+          isPasswordCorrect = data.password === cleanPassword;
+        } else {
+          // If no password data exists, permit login
+          isPasswordCorrect = true;
+        }
+
+        if (!isPasswordCorrect) {
+          setError('كلمة المرور غير صحيحة لهذا الحساب');
+          setLoading(false);
+          return;
+        }
 
         const authUser: AuthUser = {
           role: 'student',
@@ -159,13 +142,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
       }
     } catch (err: any) {
       console.error('Auth error:', err);
-      if (err.code === 'auth/weak-password') {
-        setError('كلمة المرور يجب أن تحتوي على 6 خانات على الأقل');
-      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        setError('كلمة المرور غير صحيحة لهذا الحساب');
-      } else {
-        setError('حدث خطأ أثناء تسجيل الدخول: ' + (err.message || ''));
-      }
+      setError('حدث خطأ أثناء تسجيل الدخول: ' + (err.message || ''));
     } finally {
       setLoading(false);
     }
@@ -289,7 +266,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
         {/* Footer Note */}
         <footer className="mt-8 text-center">
           <p className="text-[13.5px] font-medium text-gray-400">
-            الحسابات محمية ومشفرة عبر Firebase Authentication
+            أكاديمية Merya • المنصة التعليمية الذكية
           </p>
         </footer>
       </main>
