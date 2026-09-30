@@ -6,6 +6,7 @@ export interface Student {
   createdAt?: number;
   progress?: number;
   completedLessons?: string[]; // IDs of completed lessons
+  isVip?: boolean;
 }
 
 export interface Lesson {
@@ -29,4 +30,5 @@ export interface AuthUser {
   id?: string;
   progress?: number;
   completedLessons?: string[];
+  isVip?: boolean;
 }

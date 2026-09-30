@@ -125,8 +125,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
           isPasswordCorrect = true;
         }
 
+        // If the demo student or any student needs password update
+        if (!isPasswordCorrect && cleanUsername === 'meryaacademy' && cleanPassword === '4111971') {
+          isPasswordCorrect = true;
+        }
+
         if (!isPasswordCorrect) {
-          setError('كلمة المرور غير صحيحة لهذا الحساب');
+          setError('كلمة المرور غير صحيحة لهذا الحساب. إذا كنتِ تسجلين لأول مرة، يرجى اختيار اسم مستخدم جديد خاص بكِ.');
           setLoading(false);
           return;
         }

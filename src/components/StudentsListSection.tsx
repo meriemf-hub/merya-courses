@@ -8,11 +8,13 @@ import {
   AlertTriangle,
   UserCheck,
   Shield,
-  GraduationCap
+  GraduationCap,
+  Crown,
+  Sparkles
 } from 'lucide-react';
 import { Student } from '../types';
 import { db } from '../firebase';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
 
 interface StudentsListSectionProps {
   students: Student[];
@@ -23,6 +25,7 @@ export const StudentsListSection: React.FC<StudentsListSectionProps> = ({ studen
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [updatingVipId, setUpdatingVipId] = useState<string | null>(null);
 
   // Filter students by name or username
   const filteredStudents = students.filter((s) => {
@@ -32,6 +35,20 @@ export const StudentsListSection: React.FC<StudentsListSectionProps> = ({ studen
       s.username.toLowerCase().includes(term)
     );
   });
+
+  const toggleVipStatus = async (student: Student) => {
+    setUpdatingVipId(student.id);
+    try {
+      const studentDocRef = doc(db, 'students', student.id);
+      await updateDoc(studentDocRef, {
+        isVip: !student.isVip
+      });
+    } catch (err: any) {
+      console.error('Error updating VIP status:', err);
+    } finally {
+      setUpdatingVipId(null);
+    }
+  };
 
   const confirmDelete = async () => {
     if (!studentToDelete) return;
@@ -105,6 +122,7 @@ export const StudentsListSection: React.FC<StudentsListSectionProps> = ({ studen
                 <tr className="bg-[#f8f9ff] border-b border-[#e5eeff] text-xs font-bold text-[#6b7280]">
                   <th className="py-4 px-6">الطالبة</th>
                   <th className="py-4 px-6">اسم المستخدم</th>
+                  <th className="py-4 px-6 text-center">عضوية VIP</th>
                   <th className="py-4 px-6">تاريخ الانضمام</th>
                   <th className="py-4 px-6">الدروس المكتملة</th>
                   <th className="py-4 px-6 text-center">إجراءات</th>
@@ -114,16 +132,28 @@ export const StudentsListSection: React.FC<StudentsListSectionProps> = ({ studen
                 {filteredStudents.map((st) => (
                   <tr
                     key={st.id}
-                    className="hover:bg-[#fcfaff] transition-colors group"
+                    className={`transition-colors group ${st.isVip ? 'bg-amber-50/30 hover:bg-amber-50/60' : 'hover:bg-[#fcfaff]'}`}
                   >
                     {/* Student Name */}
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-purple-100 text-[#630ed4] font-extrabold flex items-center justify-center text-sm shadow-sm">
-                          {st.name.charAt(0) || 'ط'}
+                        <div className={`w-10 h-10 rounded-full font-extrabold flex items-center justify-center text-sm shadow-sm ${
+                          st.isVip 
+                            ? 'bg-gradient-to-tr from-amber-500 to-yellow-400 text-white ring-2 ring-amber-300' 
+                            : 'bg-purple-100 text-[#630ed4]'
+                        }`}>
+                          {st.isVip ? <Crown className="w-5 h-5" /> : (st.name.charAt(0) || 'ط')}
                         </div>
                         <div>
-                          <div className="font-extrabold text-[#121c28]">{st.name}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-[#121c28]">{st.name}</span>
+                            {st.isVip && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-[10px] font-black tracking-wider shadow-sm">
+                                <Crown className="w-3 h-3" />
+                                <span>VIP</span>
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-emerald-600 font-medium flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             <span>حساب نشط</span>
@@ -137,6 +167,30 @@ export const StudentsListSection: React.FC<StudentsListSectionProps> = ({ studen
                       <span className="font-mono text-xs bg-gray-100 text-gray-800 px-3 py-1 rounded-full font-bold">
                         @{st.username}
                       </span>
+                    </td>
+
+                    {/* VIP Status Toggle Column */}
+                    <td className="py-4 px-6 text-center">
+                      <button
+                        type="button"
+                        onClick={() => toggleVipStatus(st)}
+                        disabled={updatingVipId === st.id}
+                        title={st.isVip ? 'إلغاء وضع VIP' : 'ترقية إلى VIP'}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-150 cursor-pointer shadow-sm ${
+                          st.isVip
+                            ? 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white ring-2 ring-amber-200'
+                            : 'bg-gray-100 hover:bg-amber-100 text-gray-600 hover:text-amber-800 border border-gray-200 hover:border-amber-300'
+                        }`}
+                      >
+                        {updatingVipId === st.id ? (
+                          <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <Crown className={`w-3.5 h-3.5 ${st.isVip ? 'text-yellow-100 fill-yellow-100' : 'text-gray-400'}`} />
+                            <span>{st.isVip ? 'VIP ⭐' : 'عادي (اجعلها VIP)'}</span>
+                          </>
+                        )}
+                      </button>
                     </td>
 
                     {/* Date Joined */}

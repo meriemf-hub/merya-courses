@@ -10,7 +10,8 @@ import {
   X, 
   Sparkles,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  Crown
 } from 'lucide-react';
 import { AuthUser, Student, Lesson } from './types';
 import { LoginModal } from './components/LoginModal';
@@ -59,19 +60,26 @@ export default function App() {
             dateJoined: data.dateJoined || '',
             createdAt: data.createdAt || 0,
             progress: typeof data.progress === 'number' ? data.progress : 0,
-            completedLessons: data.completedLessons || []
+            completedLessons: data.completedLessons || [],
+            isVip: Boolean(data.isVip)
           });
         });
         // Sort by newest first
         studentList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         setStudents(studentList);
 
-        // Keep current student's completed lessons synchronized
+        // Keep current student's completed lessons & VIP status synchronized
         if (currentUser && currentUser.role === 'student' && currentUser.id) {
           const updatedSelf = studentList.find((s) => s.id === currentUser.id);
           if (updatedSelf) {
             setCurrentUser((prev) =>
-              prev ? { ...prev, completedLessons: updatedSelf.completedLessons } : null
+              prev
+                ? {
+                    ...prev,
+                    completedLessons: updatedSelf.completedLessons,
+                    isVip: updatedSelf.isVip
+                  }
+                : null
             );
           }
         }
@@ -226,7 +234,15 @@ export default function App() {
           {/* User Profile & Logout */}
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col text-left items-end">
-              <span className="text-xs font-extrabold text-[#121c28]">{currentUser.name}</span>
+              <div className="flex items-center gap-1.5">
+                {currentUser.isVip && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-[10px] font-black shadow-sm">
+                    <Crown className="w-2.5 h-2.5" />
+                    <span>VIP</span>
+                  </span>
+                )}
+                <span className="text-xs font-extrabold text-[#121c28]">{currentUser.name}</span>
+              </div>
               <span className="text-[11px] text-gray-500 font-mono">@{currentUser.username}</span>
             </div>
 
